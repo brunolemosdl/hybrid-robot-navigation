@@ -1,0 +1,18 @@
+[project]
+name = "hybrid-robot-navigation"
+version = "0.0.1"
+description = "Implementation and comparison of classical, reactive, and deep reinforcement learning (DRL) planners for mobile robot navigation in dynamic environments using CoppeliaSim. Provides a lightweight hybrid strategy combining the strengths of both paradigms and a reproducible benchmark for evaluating safety, efficiency, and smoothness."
+authors = [
+    {name = "Bruno Lemos de Lima", email = "bruno.lemos@dcc.ufmg.br"},
+    {name = "Rodrigo Santos da Silva", email = "rodrigo.silva@dcc.ufmg.br"}
+]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
