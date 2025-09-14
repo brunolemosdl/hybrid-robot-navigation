@@ -2,15 +2,22 @@ from dataclasses import dataclass
 from typing import Dict, Any, Tuple
 from src.core.session import CoppeliaSimSession
 from src.core.geometry import Pose2D
-from src.robots.epuck import find_epuck, find_wheel_joints, set_wheel_speeds, disable_child_script
+from src.robots.epuck import (
+    find_epuck,
+    find_wheel_joints,
+    set_wheel_speeds,
+    disable_child_script,
+)
 from src.robots.diffdrive import diff_drive
+
 
 @dataclass
 class EnvConfig:
     dt: float = 0.05
     v_max: float = 0.10
     w_max: float = 2.0
-    target: Tuple[float,float] = (0.5, 0.0)
+    target: Tuple[float, float] = (0.5, 0.0)
+
 
 class EpuckNavV0:
     def __init__(self, session: CoppeliaSimSession, cfg: EnvConfig = EnvConfig()):
@@ -44,5 +51,5 @@ class EpuckNavV0:
     def _reward(self, obs: Dict[str, Any]) -> float:
         px, py = obs["pose"].x, obs["pose"].y
         tx, ty = self.cfg.target
-        dist = ((px-tx)**2 + (py-ty)**2) ** 0.5
+        dist = ((px - tx) ** 2 + (py - ty) ** 2) ** 0.5
         return -dist  # simples: quanto mais perto, melhor
