@@ -1,31 +1,49 @@
-import time
-from src.core import CoppeliaSimSession
-from src.robots.epuck import (
-    find_epuck,
-    find_wheel_joints,
-    set_wheel_speeds,
-    disable_child_script,
-)
-from src.config import COPPELIA_HOST, COPPELIA_PORT
-
+import sys
+from utils import setup_logging, validate_arguments, print_configuration, ensure_directory_exists, get_coppelia_session
+import argparse
 
 def main():
-    with CoppeliaSimSession(host=COPPELIA_HOST, port=COPPELIA_PORT) as sess:
-        sess.start()
-        sess.wait_until_running()
-        ep = find_epuck(sess, hints=["/ePuck", "/ePuck#0"])
-        disable_child_script(sess, ep)
-        l, r = find_wheel_joints(sess, ep)
-        try:
-            set_wheel_speeds(sess, l, r, 5.0, 5.0)
-            for _ in range(150):
-                sess.step()
-                time.sleep(0.01)
-        finally:
-            set_wheel_speeds(sess, l, r, 0.0, 0.0)
-            for _ in range(5):
-                sess.step()
-            sess.stop()
+    parser = argparse.ArgumentParser(
+        description="Path Planning and Navigation - Mobile Robotics TP2"
+    )
+    parser.add_argument(
+        "algorithm",
+        choices=["rrt", "roadmap", "wavefront", "potential_fields", "extract_map"],
+    )
+    parser.add_argument("robot", choices=["differential", "holonomic"])
+    parser.add_argument("scene", choices=["maze_1", "maze_2"])
+    parser.add_argument("--scene-path", default="./scenes")
+    parser.add_argument("--visualize", action="store_true")
+    parser.add_argument("--output-dir", default="./results")
+    parser.add_argument("--navigate-only", action="store_true")
+    parser.add_argument(
+        "--host", default="localhost", help="CoppeliaSim ZMQ host (default: localhost)"
+    )
+    parser.add_argument(
+        "--port", type=int, default=23000, help="CoppeliaSim ZMQ port (default: 23000)"
+    )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Enable verbose logging with detailed debug information (default: False)",
+    )
+    args = parser.parse_args()
+
+    try:
+        logger = setup_logging(verbose=args.verbose, log_to_file=True, log_dir="logs")
+
+        validate_arguments(args)
+        print_configuration(args, logger)
+        ensure_directory_exists(args.output_dir)
+
+        get_coppelia_session(args.host, args.port)
+    except KeyboardInterrupt:
+        logger.warning("Process interrupted by user.")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
