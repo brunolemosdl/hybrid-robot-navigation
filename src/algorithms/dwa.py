@@ -63,7 +63,11 @@ class DWA:
                 c = self._clearance_cost(traj, obstacles)
                 s = self._speed_reward(u)
 
-                cost = self.cfg.w_goal * g + self.cfg.w_clearance * c - self.cfg.w_speed * s
+                cost = (
+                    self.cfg.w_goal * g
+                    + self.cfg.w_clearance * c
+                    - self.cfg.w_speed * s
+                )
 
                 if cost < min_cost:
                     min_cost = cost
@@ -87,9 +91,9 @@ class DWA:
     def _dynamic_window(self, x: np.ndarray) -> Tuple[float, float, float, float]:
         v, w = float(x[3]), float(x[4])
 
-        v_low  = max(self.cfg.v_min, v - self.cfg.a_v * self.cfg.dt)
+        v_low = max(self.cfg.v_min, v - self.cfg.a_v * self.cfg.dt)
         v_high = min(self.cfg.v_max, v + self.cfg.a_v * self.cfg.dt)
-        w_low  = max(self.cfg.w_min, w - self.cfg.a_w * self.cfg.dt)
+        w_low = max(self.cfg.w_min, w - self.cfg.a_w * self.cfg.dt)
         w_high = min(self.cfg.w_max, w + self.cfg.a_w * self.cfg.dt)
 
         return v_low, v_high, w_low, w_high
@@ -103,7 +107,9 @@ class DWA:
             t += self.cfg.dt
         return np.asarray(traj, dtype=float)
 
-    def _clearance_cost(self, traj: np.ndarray, obstacles: Optional[np.ndarray]) -> float:
+    def _clearance_cost(
+        self, traj: np.ndarray, obstacles: Optional[np.ndarray]
+    ) -> float:
         """
         Retorna custo de folga (maior = pior). Colisão -> custo enorme.
         obstacles: Nx2 (x,y) ou Nx3 (x,y,r)

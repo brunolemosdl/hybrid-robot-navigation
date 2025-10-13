@@ -16,5 +16,5 @@ class NavigatorProtocol(Protocol):
         path_world: Iterable[Tuple[float, float]],
         controller: "BaseController",
         *args,
-        **kwargs
+        **kwargs,
     ) -> None: ...
