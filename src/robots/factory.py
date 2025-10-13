@@ -1,4 +1,5 @@
 from utils.session import get_coppelia_session
+from algorithms.dwa import DWAController, DWAConfig
 
 from robots.differential import (
     controller as differential_controller,
@@ -14,13 +15,33 @@ from robots.holonomic import (
 )
 
 
-def get_robot_components(robot_type: str):
+def get_robot_components(robot_type: str, local_planner: str = "none"):
+    """
+    Monta os componentes do robô e permite escolher um planner local (ex.: 'dwa').
+    - robot_type: 'differential' | 'holonomic'
+    - local_planner: 'none' | 'dwa'
+    """
     session = get_coppelia_session()
 
     if robot_type == "differential":
         left_motor, right_motor = differential_kinematics.motor_paths()
+
+        controller = differential_controller.DifferentialController()
+
+        if local_planner and local_planner.lower() == "dwa":
+            if DWAController is None:
+                raise ImportError(
+                    "DWAController não encontrado. Verifique o módulo controllers/dwa_controller.py"
+                )
+
+            dwa_cfg = DWAConfig() if DWAConfig else None
+            controller = DWAController(
+                config=dwa_cfg,
+                obstacle_provider=None,
+            )
+
         return {
-            "controller": differential_controller.DifferentialController(),
+            "controller": controller,
             "navigator": differential_navigator.DifferentialNavigator(),
             "actuator": differential_actuator.DifferentialActuator(
                 session, left_motor, right_motor
@@ -33,6 +54,13 @@ def get_robot_components(robot_type: str):
         left_top, right_top, left_bottom, right_bottom = (
             holonomic_kinematics.wheel_paths()
         )
+
+        if local_planner and local_planner.lower() == "dwa":
+            raise NotImplementedError(
+                "DWA para robô holonômico não está implementado. "
+                "Adapte o controlador para (vx, vy, w) ou use 'none'."
+            )
+
         return {
             "controller": holonomic_controller.HolonomicController(),
             "navigator": holonomic_navigator.HolonomicNavigator(),

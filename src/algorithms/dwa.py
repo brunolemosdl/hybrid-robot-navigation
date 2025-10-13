@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple, Iterable, Optional
+from typing import Tuple, Iterable, Optional, Callable
 import numpy as np
 
 
@@ -19,11 +19,10 @@ class DWAConfig:
     v_reso: float = 0.05
     w_reso: float = 0.05
 
-    # Geometria/segurança
     robot_radius: float = 0.20
     obstacle_inflation: float = 0.05
 
-    # Pesos de custo
+    w_goal: float = 1.0
     w_clearance: float = 1.5
     w_speed: float = 0.5
 
@@ -144,3 +143,41 @@ class DWA:
     def _speed_reward(self, u: np.ndarray) -> float:
         v = float(u[0])
         return v  # usamos como recompensa e subtraímos no custo total
+
+
+@dataclass
+class Twist2D:
+    linear_velocity_x: float
+    angular_velocity_z: float
+
+class DWAController:
+    def __init__(
+        self,
+        config: Optional[DWAConfig] = None,
+        obstacle_provider: Optional[Callable[[], np.ndarray]] = None,
+    ):
+        self.dwa = DWA(config=config)
+        self.obstacle_provider = obstacle_provider
+
+    def compute_control(
+        self,
+        pose: Iterable[float],            # (x, y, theta)
+        goal: Iterable[float],            # (gx, gy) ou (gx, gy, *)
+        twist: Optional[Tuple[float, float]] = None,  # (v, w) opcional
+    ) -> Twist2D:
+        x, y, theta = float(pose[0]), float(pose[1]), float(pose[2])
+        gx, gy = float(goal[0]), float(goal[1])
+        goal_xy = np.array([gx, gy], dtype=float)
+
+        if twist is not None:
+            v, w = float(twist[0]), float(twist[1])
+        else:
+            v, w = float(self.dwa.last_u[0]), float(self.dwa.last_u[1])
+
+        state = np.array([x, y, theta, v, w], dtype=float)
+        obstacles = self.obstacle_provider() if self.obstacle_provider else None
+        u, _, _ = self.dwa.plan(state, goal_xy, obstacles)
+
+        v_cmd, w_cmd = float(u[0]), float(u[1])
+        return Twist2D(linear_velocity_x=v_cmd, angular_velocity_z=w_cmd)
+

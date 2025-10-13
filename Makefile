@@ -21,7 +21,12 @@ MAGENTA = \033[35m
 CYAN = \033[36m
 NC = \033[0m
 
-EXTRA_FLAGS =
+# Planners
+GLOBAL ?= wavefront   # planner global padrão
+LOCAL  ?= dwa         # planner local (DWA por padrão)
+
+EXTRA_FLAGS += --global $(GLOBAL) --local $(LOCAL)
+
 
 ifeq ($(VISUALIZE),1)
 	EXTRA_FLAGS += --visualize
@@ -55,6 +60,14 @@ help:
 	@echo "$(GREEN)USAGE:$(NC)"
 	@echo "  make <algorithm> ROBOT=<type> SCENE=<scene> [OPTIONS]"
 	@echo ""
+		@echo "$(GREEN)PLANNERS:$(NC)"
+	@echo "  $(BLUE)GLOBAL$(NC)            - Global planner: rrt | roadmap | wavefront | potential_fields (default: wavefront)"
+	@echo "  $(BLUE)LOCAL$(NC)             - Local planner: dwa | none (default: dwa)"
+	@echo ""
+	@echo "$(GREEN)EXAMPLES (com DWA):$(NC)"
+	@echo "  make wavefront ROBOT=differential SCENE=maze_1 LOCAL=dwa"
+	@echo "  make rrt ROBOT=differential SCENE=maze_2 LOCAL=dwa VERBOSE=1"
+	@echo "  make extract_map ROBOT=differential SCENE=maze_1   # (não usa local planner)"
 	@echo "$(GREEN)ALGORITHMS:$(NC)"
 	@echo "  $(YELLOW)rrt$(NC)               - Rapidly-exploring Random Tree algorithm"
 	@echo "  $(YELLOW)roadmap$(NC)           - Roadmap algorithm"
