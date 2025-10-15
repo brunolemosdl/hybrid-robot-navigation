@@ -19,6 +19,7 @@ dependencies = [
     "opencv-python==4.12.0.88",
     "networkx>=3.0",
     "matplotlib>=3.7.0",
+    "torch>=2.2.0",
 ]
 
 
