@@ -44,7 +44,10 @@ class CoppeliaSimSession:
         try:
             if self.client is not None and self.simulation is not None:
                 try:
-                    if self.simulation.getSimulationState() != self.simulation.simulation_stopped:
+                    if (
+                        self.simulation.getSimulationState()
+                        != self.simulation.simulation_stopped
+                    ):
                         try:
                             self.simulation.stopSimulation()
                         except Exception:

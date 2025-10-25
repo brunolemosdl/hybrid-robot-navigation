@@ -10,7 +10,7 @@ OUTPUT_DIR ?= ./results
 SCENE_PATH ?= ./scenes
 
 ROBOTS = differential holonomic
-SCENES = maze_1 maze_2
+SCENES = scene_1 scene_2 scene_3 scene_4
 ALGORITHMS = rrt roadmap wavefront potential_fields extract_map
 
 GREEN = \033[32m
@@ -21,7 +21,12 @@ MAGENTA = \033[35m
 CYAN = \033[36m
 NC = \033[0m
 
-EXTRA_FLAGS =
+# Planners
+GLOBAL ?= wavefront   # planner global padrão
+LOCAL  ?= dwa         # planner local (DWA por padrão)
+
+EXTRA_FLAGS += --global $(GLOBAL) --local $(LOCAL)
+
 
 ifeq ($(VISUALIZE),1)
 	EXTRA_FLAGS += --visualize
@@ -55,6 +60,14 @@ help:
 	@echo "$(GREEN)USAGE:$(NC)"
 	@echo "  make <algorithm> ROBOT=<type> SCENE=<scene> [OPTIONS]"
 	@echo ""
+		@echo "$(GREEN)PLANNERS:$(NC)"
+	@echo "  $(BLUE)GLOBAL$(NC)            - Global planner: rrt | roadmap | wavefront | potential_fields (default: wavefront)"
+	@echo "  $(BLUE)LOCAL$(NC)             - Local planner: dwa | none (default: dwa)"
+	@echo ""
+	@echo "$(GREEN)EXAMPLES (com DWA):$(NC)"
+	@echo "  make wavefront ROBOT=differential SCENE=scene_1 LOCAL=dwa"
+	@echo "  make rrt ROBOT=differential SCENE=scene_2 LOCAL=dwa VERBOSE=1"
+	@echo "  make extract_map ROBOT=differential SCENE=scene_1   # (não usa local planner)"
 	@echo "$(GREEN)ALGORITHMS:$(NC)"
 	@echo "  $(YELLOW)rrt$(NC)               - Rapidly-exploring Random Tree algorithm"
 	@echo "  $(YELLOW)roadmap$(NC)           - Roadmap algorithm"
@@ -63,7 +76,7 @@ help:
 	@echo "  $(YELLOW)extract_map$(NC)       - Extract map only (no path planning)"
 	@echo ""
 	@echo "$(GREEN)ROBOTS:$(NC) $(MAGENTA)differential$(NC) | $(MAGENTA)holonomic$(NC)"
-	@echo "$(GREEN)SCENES:$(NC) $(MAGENTA)maze_1$(NC) | $(MAGENTA)maze_2$(NC)"
+	@echo "$(GREEN)SCENES:$(NC) $(MAGENTA)scene_1$(NC) | $(MAGENTA)scene_2$(NC)"
 	@echo ""
 	@echo "$(GREEN)OPTIONS:$(NC)"
 	@echo "  $(BLUE)VISUALIZE=1$(NC)       - Enable visualization"
@@ -75,12 +88,12 @@ help:
 	@echo "  $(BLUE)SCENE_PATH$(NC)        - Scene files directory (default: ./scenes)"
 	@echo ""
 	@echo "$(GREEN)EXAMPLES:$(NC)"
-	@echo "  make rrt ROBOT=differential SCENE=maze_1"
-	@echo "  make roadmap ROBOT=holonomic SCENE=maze_2 VISUALIZE=1"
-	@echo "  make extract_map ROBOT=differential SCENE=maze_1 VISUALIZE=1"
-	@echo "  make rrt ROBOT=differential SCENE=maze_1 VERBOSE=1"
-	@echo "  make wavefront ROBOT=holonomic SCENE=maze_2 VISUALIZE=1 VERBOSE=1"
-	@echo "  make run-all ROBOT=differential SCENE=maze_1 VISUALIZE=1"
+	@echo "  make rrt ROBOT=differential SCENE=scene_1"
+	@echo "  make roadmap ROBOT=holonomic SCENE=scene_2 VISUALIZE=1"
+	@echo "  make extract_map ROBOT=differential SCENE=scene_1 VISUALIZE=1"
+	@echo "  make rrt ROBOT=differential SCENE=scene_1 VERBOSE=1"
+	@echo "  make wavefront ROBOT=holonomic SCENE=scene_2 VISUALIZE=1 VERBOSE=1"
+	@echo "  make run-all ROBOT=differential SCENE=scene_1 VISUALIZE=1"
 	@echo ""
 	@echo "$(GREEN)UTILITY COMMANDS:$(NC)"
 	@echo "  $(YELLOW)setup$(NC)             - Install dependencies and create directories"
@@ -99,10 +112,10 @@ help:
 	@echo "$(CYAN)════════════════════════════════════════════════════════════════════════════════$(NC)"
 
 validate-params:
-	@if [ -z "$(ROBOT)" ]; then echo "$(RED)Error: ROBOT not specified$(NC)"; echo "Use: make <algorithm> ROBOT=<differential|holonomic> SCENE=<maze_1|maze_2>"; exit 1; fi
-	@if [ -z "$(SCENE)" ]; then echo "$(RED)Error: SCENE not specified$(NC)"; echo "Use: make <algorithm> ROBOT=<differential|holonomic> SCENE=<maze_1|maze_2>"; exit 1; fi
+	@if [ -z "$(ROBOT)" ]; then echo "$(RED)Error: ROBOT not specified$(NC)"; echo "Use: make <algorithm> ROBOT=<differential|holonomic> SCENE=<scene_1|scene_2>"; exit 1; fi
+	@if [ -z "$(SCENE)" ]; then echo "$(RED)Error: SCENE not specified$(NC)"; echo "Use: make <algorithm> ROBOT=<differential|holonomic> SCENE=<scene_1|scene_2>"; exit 1; fi
 	@if [ "$(ROBOT)" != "differential" ] && [ "$(ROBOT)" != "holonomic" ]; then echo "$(RED)Error: Invalid ROBOT '$(ROBOT)'$(NC)"; echo "Valid options: differential, holonomic"; exit 1; fi
-	@if [ "$(SCENE)" != "maze_1" ] && [ "$(SCENE)" != "maze_2" ]; then echo "$(RED)Error: Invalid SCENE '$(SCENE)'$(NC)"; echo "Valid options: maze_1, maze_2"; exit 1; fi
+	@if [ "$(SCENE)" != "scene_1" ] && [ "$(SCENE)" != "scene_2" ]; then echo "$(RED)Error: Invalid SCENE '$(SCENE)'$(NC)"; echo "Valid options: scene_1, scene_2"; exit 1; fi
 	@echo "$(GREEN)✓ Parameters validated: ROBOT=$(ROBOT), SCENE=$(SCENE)$(NC)"
 
 rrt: validate-params

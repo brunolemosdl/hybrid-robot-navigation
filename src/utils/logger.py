@@ -23,7 +23,7 @@ class ProjectLogger:
                 cls._logger.setLevel(logging.INFO)
             return cls._logger
 
-        cls._logger = logging.getLogger("TP2")
+        cls._logger = logging.getLogger("RL Project")
         cls._logger.setLevel(logging.DEBUG if verbose else logging.INFO)
 
         if cls._logger.handlers:

@@ -36,6 +36,13 @@ from utils.paths import (
     get_relative_path_for_display,
 )
 
+GLOBAL_MAP = {
+    "rrt": RRTPlanner,
+    "roadmap": RoadmapPlanner,
+    "wavefront": WavefrontPlanner,
+    "potential_fields": PotentialFieldsPlanner,
+}
+
 
 def validate_arguments(args):
     valid_algorithms = [
@@ -46,7 +53,7 @@ def validate_arguments(args):
         "extract_map",
     ]
     valid_robots = ["differential", "holonomic"]
-    valid_scenes = ["maze_1", "maze_2"]
+    valid_scenes = ["scene_1", "scene_2"]
 
     if args.algorithm not in valid_algorithms:
         raise ValueError(f"Invalid algorithm '{args.algorithm}'")
@@ -71,7 +78,8 @@ def print_configuration(args, logger):
     logger.info("=" * 60)
     logger.info("PATH PLANNING AND NAVIGATION")
     logger.info("=" * 60)
-    logger.info(f"Algorithm     : {args.algorithm.upper()}")
+    logger.info(f"Global Planner: {args.global_planner.upper()}")
+    logger.info(f"Local Planner : {args.local_planner.upper()}")
     logger.info(f"Robot Type    : {args.robot.upper()}")
     logger.info(f"Scene         : {args.scene.upper()}")
     logger.info(f"Scene Path    : {display_path}")
@@ -119,7 +127,7 @@ def run_planner(args, PlannerClass, logger):
     logger.debug(f"Goal position: {goal_world}")
 
     binary_map = extract_map_from_simulation(
-        sensor_path="/maze/floor/sensor",
+        sensor_path="/scene/floor/sensor",
         clean_map=True,
         save_map=False,
         scene=args.scene,
@@ -162,11 +170,11 @@ def run_planner(args, PlannerClass, logger):
             world_bounds=world_bounds,
             start_world=start_world,
             goal_world=goal_world,
-            title=f"Path - {args.algorithm} - {args.scene}",
+            title=f"Path - {args.global_planner} - {args.scene}",
         )
 
     out_file = save_path_result(
-        path_world, args.scene, args.robot, args.algorithm, args.output_dir
+        path_world, args.scene, args.robot, args.global_planner, args.output_dir
     )
 
     logger.info(f"Path saved to {out_file}")
@@ -183,16 +191,16 @@ def run_planner(args, PlannerClass, logger):
 def run_navigation(args, path_world, logger):
     logger.info("Starting robot navigation...")
 
-    components = get_robot_components(args.robot)
+    components = get_robot_components(
+        args.robot, getattr(args, "local_planner", "none")
+    )
     controller = components["controller"]
     navigator = components["navigator"]
-    actuator = components["actuator"]
     body_path = components["body_path"]
     kinematics = components["kinematics"]
 
     logger.debug(f"Using controller: {controller.__class__.__name__}")
     logger.debug(f"Using navigator: {navigator.__class__.__name__}")
-    logger.debug(f"Using actuator: {actuator.__class__.__name__}")
     logger.debug(f"Body path: {body_path}")
     logger.debug(f"Kinematics parameters: {kinematics}")
 
@@ -203,14 +211,17 @@ def run_navigation(args, path_world, logger):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Path Planning and Navigation - Mobile Robotics TP2"
+        description="Reinforcement Learning for Robot Path Planning and Navigation with CoppeliaSim"
     )
+
+    # Mantido por compatibilidade com chamadas antigas
     parser.add_argument(
         "algorithm",
         choices=["rrt", "roadmap", "wavefront", "potential_fields", "extract_map"],
     )
+
     parser.add_argument("robot", choices=["differential", "holonomic"])
-    parser.add_argument("scene", choices=["maze_1", "maze_2"])
+    parser.add_argument("scene", choices=["scene_1", "scene_2"])
     parser.add_argument("--scene-path", default="./scenes")
     parser.add_argument("--visualize", action="store_true")
     parser.add_argument("--output-dir", default="./results")
@@ -227,6 +238,18 @@ def main():
         action="store_true",
         help="Enable verbose logging with detailed debug information (default: False)",
     )
+
+    # Novos seletores
+    parser.add_argument(
+        "--global",
+        dest="global_planner",
+        choices=["rrt", "roadmap", "wavefront", "potential_fields"],
+        default="wavefront",
+    )
+    parser.add_argument(
+        "--local", dest="local_planner", choices=["dwa", "none"], default="dwa"
+    )
+
     args = parser.parse_args()
 
     try:
@@ -259,15 +282,6 @@ def main():
             except Exception:
                 pass
 
-        algorithm_map = {
-            "rrt": lambda a: run_planner(a, RRTPlanner, logger),
-            "roadmap": lambda a: run_planner(a, RoadmapPlanner, logger),
-            "wavefront": lambda a: run_planner(a, WavefrontPlanner, logger),
-            "potential_fields": lambda a: run_planner(
-                a, PotentialFieldsPlanner, logger
-            ),
-        }
-
         if args.algorithm == "extract_map":
             logger.info("Running map extraction only...")
 
@@ -288,7 +302,7 @@ def main():
             logger.debug(f"World bounds: {world_bounds}")
 
             binary_map = extract_map_from_simulation(
-                sensor_path="/maze/floor/sensor",
+                sensor_path="/scene/floor/sensor",
                 clean_map=True,
                 save_map=True,
                 scene=args.scene,
@@ -314,40 +328,38 @@ def main():
         if args.navigate_only:
             logger.info("Loading saved path for navigation...")
             saved_path = load_path_result(
-                args.scene, args.robot, args.algorithm, args.output_dir
+                args.scene, args.robot, args.global_planner, args.output_dir
             )
 
             if not saved_path:
                 path_file = get_saved_path_file(
-                    args.scene, args.robot, args.algorithm, args.output_dir
+                    args.scene, args.robot, args.global_planner, args.output_dir
                 )
                 logger.error(
-                    f"No saved path found at {get_relative_path_for_display(path_file)}. "
-                    "Run planning first."
+                    f"No saved path found at {get_relative_path_for_display(path_file)}. Run planning first."
                 )
                 sys.exit(1)
 
             logger.info(f"Found saved path with {len(saved_path)} waypoints")
-
             run_navigation(args, saved_path, logger)
-
             sys.exit(0)
 
-        result = algorithm_map[args.algorithm](args)
-        if result.get("success"):
-            logger.info(f"Algorithm '{args.algorithm}' completed successfully!")
+        GlobalPlannerClass = GLOBAL_MAP[args.global_planner]
+        result = run_planner(args, GlobalPlannerClass, logger)
 
-            if result.get("path"):
-                logger.info("Starting navigation to goal...")
-                run_navigation(args, result.get("path"), logger)
-
-            sys.exit(0)
-        else:
+        if not result.get("success") or not result.get("path"):
             logger.error(
-                f"Algorithm '{args.algorithm}' failed: {result.get('message')}"
+                f"Global planner '{args.global_planner}' failed: {result.get('message')}"
             )
-
             sys.exit(1)
+
+        path = result["path"]
+
+        logger.info(
+            f"Starting navigation with local planner: {args.local_planner.upper()}"
+        )
+        run_navigation(args, path, logger)
+        sys.exit(0)
 
     except KeyboardInterrupt:
         logger.warning("Process interrupted by user")
