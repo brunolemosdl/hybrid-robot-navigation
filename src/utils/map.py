@@ -87,7 +87,7 @@ def create_graph_from_binary_image(
 
 
 def extract_map_from_simulation(
-    sensor_path: str = "/maze/floor/sensor",
+    sensor_path: str = "/scene/floor/sensor",
     output_dir: str = "./results",
     selected_robot: str = "ePuck",
     clean_map: bool = True,
@@ -138,18 +138,18 @@ def extract_map_from_simulation(
         robot_height_world = sel_max_y - sel_min_y
         robot_radius_world = max(robot_width_world, robot_height_world) / 2.0
 
-        maze_floor_handle = sim.getObject("/maze/floor")
+        scene_floor_handle = sim.getObject("/scene/floor")
         max_x = sim.getObjectFloatParameter(
-            maze_floor_handle, sim.objfloatparam_objbbox_max_x
+            scene_floor_handle, sim.objfloatparam_objbbox_max_x
         )[1]
         min_x = sim.getObjectFloatParameter(
-            maze_floor_handle, sim.objfloatparam_objbbox_min_x
+            scene_floor_handle, sim.objfloatparam_objbbox_min_x
         )[1]
         max_y = sim.getObjectFloatParameter(
-            maze_floor_handle, sim.objfloatparam_objbbox_max_y
+            scene_floor_handle, sim.objfloatparam_objbbox_max_y
         )[1]
         min_y = sim.getObjectFloatParameter(
-            maze_floor_handle, sim.objfloatparam_objbbox_min_y
+            scene_floor_handle, sim.objfloatparam_objbbox_min_y
         )[1]
 
         pixels_per_meter_x = (width - 1) / (max_x - min_x)
@@ -276,18 +276,18 @@ def get_world_bounds_from_simulation() -> Tuple[float, float, float, float]:
     session.start()
     session.wait_until_running()
 
-    maze_floor_handle = sim.getObject("/maze/floor")
+    scene_floor_handle = sim.getObject("/scene/floor")
     max_x = sim.getObjectFloatParameter(
-        maze_floor_handle, sim.objfloatparam_objbbox_max_x
+        scene_floor_handle, sim.objfloatparam_objbbox_max_x
     )[1]
     min_x = sim.getObjectFloatParameter(
-        maze_floor_handle, sim.objfloatparam_objbbox_min_x
+        scene_floor_handle, sim.objfloatparam_objbbox_min_x
     )[1]
     max_y = sim.getObjectFloatParameter(
-        maze_floor_handle, sim.objfloatparam_objbbox_max_y
+        scene_floor_handle, sim.objfloatparam_objbbox_max_y
     )[1]
     min_y = sim.getObjectFloatParameter(
-        maze_floor_handle, sim.objfloatparam_objbbox_min_y
+        scene_floor_handle, sim.objfloatparam_objbbox_min_y
     )[1]
 
     session.stop()

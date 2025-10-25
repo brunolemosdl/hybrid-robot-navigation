@@ -53,7 +53,7 @@ def validate_arguments(args):
         "extract_map",
     ]
     valid_robots = ["differential", "holonomic"]
-    valid_scenes = ["maze_1", "maze_2"]
+    valid_scenes = ["scene_1", "scene_2"]
 
     if args.algorithm not in valid_algorithms:
         raise ValueError(f"Invalid algorithm '{args.algorithm}'")
@@ -127,7 +127,7 @@ def run_planner(args, PlannerClass, logger):
     logger.debug(f"Goal position: {goal_world}")
 
     binary_map = extract_map_from_simulation(
-        sensor_path="/maze/floor/sensor",
+        sensor_path="/scene/floor/sensor",
         clean_map=True,
         save_map=False,
         scene=args.scene,
@@ -221,7 +221,7 @@ def main():
     )
 
     parser.add_argument("robot", choices=["differential", "holonomic"])
-    parser.add_argument("scene", choices=["maze_1", "maze_2"])
+    parser.add_argument("scene", choices=["scene_1", "scene_2"])
     parser.add_argument("--scene-path", default="./scenes")
     parser.add_argument("--visualize", action="store_true")
     parser.add_argument("--output-dir", default="./results")
@@ -302,7 +302,7 @@ def main():
             logger.debug(f"World bounds: {world_bounds}")
 
             binary_map = extract_map_from_simulation(
-                sensor_path="/maze/floor/sensor",
+                sensor_path="/scene/floor/sensor",
                 clean_map=True,
                 save_map=True,
                 scene=args.scene,
