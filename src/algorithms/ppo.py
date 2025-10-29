@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.optim as optim
 from src.utils.config import DEVICE
 
+
 def set_seed(seed: int = 42):
     random.seed(seed)
     np.random.seed(seed)
@@ -29,7 +30,7 @@ class CoppeliaSimObstacleAvoidEnv:
         sensor_dim: int = 16,
         v_lin: float = 0.12,
         w_ang: float = 1.2,
-        action_scheme: str = "5"
+        action_scheme: str = "5",
     ):
         self.max_steps = max_steps
         self.sensor_dim = sensor_dim
@@ -39,13 +40,13 @@ class CoppeliaSimObstacleAvoidEnv:
 
         if action_scheme == "3":
             self.actions = [
-                (1.0,  0.0),
+                (1.0, 0.0),
                 (0.6, +1.0),
                 (0.6, -1.0),
             ]
         else:
             self.actions = [
-                (1.0,  0.0),
+                (1.0, 0.0),
                 (0.8, +0.6),
                 (0.8, -0.6),
                 (0.4, +1.0),
@@ -78,7 +79,7 @@ class CoppeliaSimObstacleAvoidEnv:
     def _read_sensors(self) -> np.ndarray:
         """Leia sensores e normalize em [0,1] (0 longe, 1 bem perto)."""
         # TODO: ler IR/LiDAR, normalizar/recortar para sensor_dim
-        
+
         obs = np.clip(np.random.rand(self.sensor_dim) * 0.2, 0, 1).astype(np.float32)
         return obs
 
@@ -92,7 +93,7 @@ class CoppeliaSimObstacleAvoidEnv:
         # drive diferencial: v_left = (2v - wL) / (2R), v_right = (2v + wL) / (2R)
         # Use seu raio de roda (R) e distância entre rodas (L).
         R = 0.0205
-        L = 0.053 
+        L = 0.053
         v_l = (2.0 * v - w * L) / (2.0 * R)
         v_r = (2.0 * v + w * L) / (2.0 * R)
         # TODO: set nos joints:
@@ -115,7 +116,9 @@ class CoppeliaSimObstacleAvoidEnv:
         self._reset_sim()
         self.collision = False
         self.step_count = 0
-        self.last_position = np.array([0.0, 0.0], dtype=np.float32)  # TODO: settar pose inicial correta
+        self.last_position = np.array(
+            [0.0, 0.0], dtype=np.float32
+        )  # TODO: settar pose inicial correta
         obs = self._read_sensors()
         return obs
 
@@ -191,12 +194,18 @@ class RolloutBuffer:
     def compute_advantages(self, last_value: float, last_done: bool):
         adv = 0.0
         for t in reversed(range(self.ptr)):
-            next_non_terminal = 1.0 - float(self.dones[t] if t < self.ptr - 1 else last_done)
+            next_non_terminal = 1.0 - float(
+                self.dones[t] if t < self.ptr - 1 else last_done
+            )
             next_value = self.values[t + 1] if t < self.ptr - 1 else last_value
-            delta = self.rewards[t] + self.gamma * next_value * next_non_terminal - self.values[t]
+            delta = (
+                self.rewards[t]
+                + self.gamma * next_value * next_non_terminal
+                - self.values[t]
+            )
             adv = delta + self.gamma * self.lam * next_non_terminal * adv
             self.adv[t] = adv
-        self.returns[:self.ptr] = self.adv[:self.ptr] + self.values[:self.ptr]
+        self.returns[: self.ptr] = self.adv[: self.ptr] + self.values[: self.ptr]
 
     def get(self, batch_size: int):
         idxs = np.arange(self.ptr)
@@ -207,11 +216,16 @@ class RolloutBuffer:
             yield (
                 torch.as_tensor(self.obs[mb_idx], dtype=torch.float32, device=DEVICE),
                 torch.as_tensor(self.actions[mb_idx], dtype=torch.long, device=DEVICE),
-                torch.as_tensor(self.logprobs[mb_idx], dtype=torch.float32, device=DEVICE),
+                torch.as_tensor(
+                    self.logprobs[mb_idx], dtype=torch.float32, device=DEVICE
+                ),
                 torch.as_tensor(self.adv[mb_idx], dtype=torch.float32, device=DEVICE),
-                torch.as_tensor(self.returns[mb_idx], dtype=torch.float32, device=DEVICE),
+                torch.as_tensor(
+                    self.returns[mb_idx], dtype=torch.float32, device=DEVICE
+                ),
             )
         self.ptr = 0
+
 
 class ActorCritic(nn.Module):
     def __init__(self, obs_dim: int, n_actions: int, hidden_sizes=(128, 128)):
@@ -249,6 +263,7 @@ class ActorCritic(nn.Module):
         entropy = dist.entropy()
         values = self.critic(obs).squeeze(-1)
         return logprobs, entropy, values
+
 
 @dataclass
 class PPOConfig:
@@ -308,15 +323,24 @@ class PPOTrainer:
 
     def update(self):
         for _ in range(self.cfg.update_epochs):
-            for mb_obs, mb_actions, mb_logprobs_old, mb_adv, mb_returns in self.buf.get(self.cfg.minibatch_size):
+            for mb_obs, mb_actions, mb_logprobs_old, mb_adv, mb_returns in self.buf.get(
+                self.cfg.minibatch_size
+            ):
                 # normalize advantages
                 mb_adv = (mb_adv - mb_adv.mean()) / (mb_adv.std() + 1e-8)
 
-                logprobs, entropy, values = self.net.evaluate_actions(mb_obs, mb_actions)
+                logprobs, entropy, values = self.net.evaluate_actions(
+                    mb_obs, mb_actions
+                )
                 ratio = torch.exp(logprobs - mb_logprobs_old)
 
                 unclipped = ratio * mb_adv
-                clipped = torch.clamp(ratio, 1.0 - self.cfg.clip_coef, 1.0 + self.cfg.clip_coef) * mb_adv
+                clipped = (
+                    torch.clamp(
+                        ratio, 1.0 - self.cfg.clip_coef, 1.0 + self.cfg.clip_coef
+                    )
+                    * mb_adv
+                )
                 policy_loss = -torch.min(unclipped, clipped).mean()
 
                 # value loss (MSE)
@@ -325,7 +349,11 @@ class PPOTrainer:
                 # entropy bonus
                 entropy_loss = -entropy.mean()
 
-                loss = policy_loss + self.cfg.vf_coef * value_loss + self.cfg.ent_coef * (-entropy_loss)
+                loss = (
+                    policy_loss
+                    + self.cfg.vf_coef * value_loss
+                    + self.cfg.ent_coef * (-entropy_loss)
+                )
 
                 self.opt.zero_grad(set_to_none=True)
                 loss.backward()
@@ -340,7 +368,7 @@ class PPOTrainer:
         while total_steps < self.cfg.total_steps:
             start_steps = total_steps
             obs, _, _ = self.collect_rollout(obs)
-            total_steps += (self.cfg.rollout_length)
+            total_steps += self.cfg.rollout_length
 
             self.update()
 

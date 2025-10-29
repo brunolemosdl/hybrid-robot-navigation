@@ -112,10 +112,10 @@ help:
 	@echo "$(CYAN)════════════════════════════════════════════════════════════════════════════════$(NC)"
 
 validate-params:
-	@if [ -z "$(ROBOT)" ]; then echo "$(RED)Error: ROBOT not specified$(NC)"; echo "Use: make <algorithm> ROBOT=<differential|holonomic> SCENE=<scene_1|scene_2>"; exit 1; fi
-	@if [ -z "$(SCENE)" ]; then echo "$(RED)Error: SCENE not specified$(NC)"; echo "Use: make <algorithm> ROBOT=<differential|holonomic> SCENE=<scene_1|scene_2>"; exit 1; fi
+	@if [ -z "$(ROBOT)" ]; then echo "$(RED)Error: ROBOT not specified$(NC)"; echo "Use: make <algorithm> ROBOT=<differential|holonomic> SCENE=<scene_1|scene_2|scene_3|scene_4>"; exit 1; fi
+	@if [ -z "$(SCENE)" ]; then echo "$(RED)Error: SCENE not specified$(NC)"; echo "Use: make <algorithm> ROBOT=<differential|holonomic> SCENE=<scene_1|scene_2|scene_3|scene_4>"; exit 1; fi
 	@if [ "$(ROBOT)" != "differential" ] && [ "$(ROBOT)" != "holonomic" ]; then echo "$(RED)Error: Invalid ROBOT '$(ROBOT)'$(NC)"; echo "Valid options: differential, holonomic"; exit 1; fi
-	@if [ "$(SCENE)" != "scene_1" ] && [ "$(SCENE)" != "scene_2" ]; then echo "$(RED)Error: Invalid SCENE '$(SCENE)'$(NC)"; echo "Valid options: scene_1, scene_2"; exit 1; fi
+	@if [ "$(SCENE)" != "scene_1" ] && [ "$(SCENE)" != "scene_2" ] && [ "$(SCENE)" != "scene_3" ] && [ "$(SCENE)" != "scene_4" ]; then echo "$(RED)Error: Invalid SCENE '$(SCENE)'$(NC)"; echo "Valid options: scene_1, scene_2, scene_3, scene_4"; exit 1; fi
 	@echo "$(GREEN)✓ Parameters validated: ROBOT=$(ROBOT), SCENE=$(SCENE)$(NC)"
 
 rrt: validate-params
@@ -255,9 +255,6 @@ clean:
 
 setup:
 	poetry install
-
-run-drive:
-	poetry run python -m src.scripts.drive_epuck
 
 format:
 	ruff format .

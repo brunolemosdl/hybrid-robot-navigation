@@ -43,6 +43,8 @@ GLOBAL_MAP = {
     "potential_fields": PotentialFieldsPlanner,
 }
 
+VALID_SCENES = ["scene_1", "scene_2", "scene_3", "scene_4"]
+
 
 def validate_arguments(args):
     valid_algorithms = [
@@ -53,7 +55,6 @@ def validate_arguments(args):
         "extract_map",
     ]
     valid_robots = ["differential", "holonomic"]
-    valid_scenes = ["scene_1", "scene_2"]
 
     if args.algorithm not in valid_algorithms:
         raise ValueError(f"Invalid algorithm '{args.algorithm}'")
@@ -61,7 +62,7 @@ def validate_arguments(args):
     if args.robot not in valid_robots:
         raise ValueError(f"Invalid robot type '{args.robot}'")
 
-    if args.scene not in valid_scenes:
+    if args.scene not in VALID_SCENES:
         raise ValueError(f"Invalid scene '{args.scene}'")
 
     if not validate_scene_file(args.scene_path, args.scene):
@@ -221,7 +222,7 @@ def main():
     )
 
     parser.add_argument("robot", choices=["differential", "holonomic"])
-    parser.add_argument("scene", choices=["scene_1", "scene_2"])
+    parser.add_argument("scene", choices=VALID_SCENES)
     parser.add_argument("--scene-path", default="./scenes")
     parser.add_argument("--visualize", action="store_true")
     parser.add_argument("--output-dir", default="./results")
