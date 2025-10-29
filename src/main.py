@@ -45,6 +45,7 @@ GLOBAL_MAP = {
 
 VALID_SCENES = ["scene_1", "scene_2", "scene_3", "scene_4"]
 
+
 def validate_arguments(args):
     valid_algorithms = [
         "rrt",

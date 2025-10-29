@@ -150,6 +150,7 @@ class Twist2D:
     linear_velocity_x: float
     angular_velocity_z: float
 
+
 class DWAController:
     def __init__(
         self,
@@ -161,8 +162,8 @@ class DWAController:
 
     def compute_control(
         self,
-        pose: Iterable[float],            # (x, y, theta)
-        goal: Iterable[float],            # (gx, gy) ou (gx, gy, *)
+        pose: Iterable[float],  # (x, y, theta)
+        goal: Iterable[float],  # (gx, gy) ou (gx, gy, *)
         twist: Optional[Tuple[float, float]] = None,  # (v, w) opcional
     ) -> Twist2D:
         x, y, theta = float(pose[0]), float(pose[1]), float(pose[2])
@@ -180,4 +181,3 @@ class DWAController:
 
         v_cmd, w_cmd = float(u[0]), float(u[1])
         return Twist2D(linear_velocity_x=v_cmd, angular_velocity_z=w_cmd)
-
